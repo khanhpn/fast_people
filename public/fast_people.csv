@@ -1,0 +1,2 @@
+{:user1=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}, :user2=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}, :user3=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}, :user4=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}}
+
