@@ -7,6 +7,7 @@ class FastPeople
 
   def initialize
     @rows = []
+    @logger ||= Logger.new(Rails.root.join('log', 'fast_people.log'))
   end
 
   def read_zipcode_file
@@ -52,8 +53,10 @@ class FastPeople
 
   def execute
     read_zipcode_file
-    obj_parse_people = ParseFastPeople.new
-    obj_parse_people.execute
+    MasterDatum.all.each do |item|
+      obj_parse_people = ParseFastPeople.new(item.name, item.zip_code, @logger)
+      @rows << obj_parse_people.execute
+    end
     write_to_csv
   end
 
