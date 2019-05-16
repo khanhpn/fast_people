@@ -35,10 +35,9 @@ class FastPeople
       proxy = Proxy.where(name: name, port: port)
       expired_proxy = Proxy.where(elite: false)
       expired_proxy.destroy_all if expired_proxy.present?
-      if !proxy.present?
-        puts "#{Time.zone.now} importing #{row}"
-        Proxy.create({name: name, port: port, elite: true}) if check_proxy?(name, port)
-      end
+      next if proxy.present? || !check_proxy?(name, port)
+      puts "#{Time.zone.now} importing #{row}"
+      Proxy.create({name: name, port: port, elite: true})
     end
     puts "#{Time.zone.now} finish import proxy"
   end
@@ -47,8 +46,9 @@ class FastPeople
     import_zipcode_file
     import_proxy
     MasterDatum.all.each do |item|
-      obj_parse_people = ParseFastPeople.new(item.name, item.zip_code, @logger)
-      @rows << obj_parse_people.execute
+      @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
+      switch_proxy(item)
+      @logger.info "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
     end
     write_to_csv
   end
@@ -63,7 +63,7 @@ class FastPeople
         f.puts("\t\twireless-phones: #{row['wireless-phones']},")
         f.puts("\t\tlandline-phones: #{row['landline-phones']},")
         f.puts("\t\tage: #{row['age']},")
-        f.puts("\t}")
+        f.puts("\t},")
       end
       f.puts("}")
     end
@@ -77,10 +77,21 @@ class FastPeople
     }
     begin
       mechanize.get(BASE_URL)
-      return true
-    rescue e
+    rescue Exception => e
       return false
     end
-    false
+    true
+  end
+
+  def switch_proxy(item)
+    proxy = Proxy.where(elite: true).sample
+    if check_proxy?(proxy.name, proxy.port)
+      obj_parse_people = ParseFastPeople.new(item.name, item.zip_code, @logger, proxy.name, proxy.port)
+      @rows << obj_parse_people.execute
+      return
+    else
+      proxy.update(elite: false)
+      switch_proxy(item)
+    end
   end
 end

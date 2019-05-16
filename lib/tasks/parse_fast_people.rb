@@ -7,11 +7,11 @@ class ParseFastPeople
   PHONE_WIRELESS = "wireless-phones"
   PHONE_LANDLINE = "landline-phones"
 
-  attr_accessor :name, :zip_code, :log
-  def initialize(name, zip_code, log)
+  attr_accessor :name, :zip_code, :log, :proxy_name, :proxy_port
+  def initialize(name, zip_code, log, proxy_name, proxy_port)
     @mechanize = Mechanize.new { |agent|
       agent.user_agent_alias = 'Mac Safari'
-      agent.set_proxy '216.172.129.15', 1212
+      agent.set_proxy proxy_name, proxy_port
     }
     @name = convert_name(name)
     @zip_code = convert_zip_code(zip_code)
@@ -49,7 +49,7 @@ class ParseFastPeople
           raw_link = item.attributes["href"]&.value
           @log.info "#{Time.zone.now} #{raw_link}"
           links << "#{BASE_URL}#{raw_link}" if raw_link.present?
-        rescue e
+        rescue Exception => e
           @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
           @log.fatal e.inspect
           @log.fatal e.backtrace
@@ -65,7 +65,7 @@ class ParseFastPeople
     begin
       age = age.text.strip
       return age.split(" ").dig(1)
-    rescue e
+    rescue Exception => e
       @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
       @log.fatal e.inspect
       @log.fatal e.backtrace
@@ -84,7 +84,7 @@ class ParseFastPeople
           phones << {"landline": phone} if phone_content&.downcase.include?("landline")
           phones << {"wireless": phone} if phone_content&.downcase.include?("wireless")
         end
-      rescue e
+      rescue Exception => e
         @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
         @log.fatal e.inspect
         @log.fatal e.backtrace
@@ -99,7 +99,7 @@ class ParseFastPeople
           phone = item.search("a")[0].text
           phones << {"landline": phone} if phone_content&.downcase.include?("landline")
           phones << {"wireless": phone} if phone_content&.downcase.include?("wireless")
-        rescue e
+        rescue Exception => e
           @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
           @log.fatal e.inspect
           @log.fatal e.backtrace
@@ -117,7 +117,7 @@ class ParseFastPeople
       begin
         next if item.attributes["data-cfemail"].nil?
         emails << cfDecodeEmail(item.attributes["data-cfemail"].value)
-      rescue e
+      rescue Exception => e
         @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
         @log.fatal e.inspect
         @log.fatal e.backtrace
@@ -131,13 +131,13 @@ class ParseFastPeople
           begin
             next if item.attributes["data-cfemail"].nil?
             emails << cfDecodeEmail(item.attributes["data-cfemail"].value)
-          rescue e
+          rescue Exception => e
             @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
             @log.fatal e.inspect
             @log.fatal e.backtrace
           end
         end
-      rescue e
+      rescue Exception => e
         @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
         @log.fatal e.inspect
         @log.fatal e.backtrace
