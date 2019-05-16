@@ -58,7 +58,7 @@ class FastPeople
       f.puts("user: {")
       @rows.each.with_index(1) do |row, index|
         f.puts("\tuser#{index}: {")
-        f.puts("\t\link: #{row['link']},")
+        f.puts("\t\tlink: #{row['link']},")
         f.puts("\t\temails: #{row['emails']},")
         f.puts("\t\twireless-phones: #{row['wireless-phones']},")
         f.puts("\t\tlandline-phones: #{row['landline-phones']},")

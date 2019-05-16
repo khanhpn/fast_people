@@ -7,13 +7,14 @@ class ParseFastPeople
   PHONE_WIRELESS = "wireless-phones"
   PHONE_LANDLINE = "landline-phones"
 
-  attr_accessor :name, :zip_code, :log, :proxy_name, :proxy_port
+  attr_accessor :name, :zip_code, :log, :proxy_name, :proxy_port, :raw_zip_code
   def initialize(name, zip_code, log, proxy_name, proxy_port)
     @mechanize = Mechanize.new { |agent|
       agent.user_agent_alias = 'Mac Safari'
       agent.set_proxy proxy_name, proxy_port
     }
     @name = convert_name(name)
+    @raw_zip_code = zip_code
     @zip_code = convert_zip_code(zip_code)
     @page = nil
     @log = log
@@ -25,9 +26,16 @@ class ParseFastPeople
     return unless link.present?
     @page = @mechanize.get(link)
     phones = get_phones
+    age = get_age
+    emails = get_emails
+    address = validate_address
+    if !address && !age.present? && !emails.present? && !phones.present? && !phones.get_values(:wireless).compact.present? && !phones.get_values(:landline).compact.present?
+      @log.info "#{Time.zone.now} this link is have some problems #{link}"
+      return
+    end
     {
       "link" => link,
-      "age" => get_age, "emails" => get_emails, "wireless-phones" => phones.get_values(:wireless).compact,
+      "age" => age, "emails" => emails, "wireless-phones" => phones.get_values(:wireless).compact,
       "landline-phones" => phones.get_values(:landline).compact
     }
   end
@@ -146,7 +154,27 @@ class ParseFastPeople
     emails
   end
 
-  private
+  def validate_address
+    begin
+      more_address = @page.search(".//p[@class='address-link']/a")
+      check_zip_code = more_address&.text&.squish
+      zip_code_tmp = @zip_code.split("~")
+      return true if check_zip_code.present? && check_zip_code.include?(zip_code_tmp.dig(0))
+
+      raw_address = @page.search(".//div[@class='detail-box']/h2")
+      return false if !raw_address.present?
+      raw_address = raw_address.text.downcase.squish
+      return false if !raw_address.present? && !raw_address.include?("current address") && !raw_address.include?("previous address")
+      return true if raw_address.include?("current address") && !raw_address.include?("previous address")
+      return true if !raw_address.include?("current address") && raw_address.include?("previous address")
+    rescue Exception => e
+      @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+      @log.fatal e.inspect
+      @log.fatal e.backtrace
+      return false
+    end
+  end
+
   def cfDecodeEmail(encodedString)
     k = encodedString[0..1]
     k = k.to_i(16).to_s(10)
