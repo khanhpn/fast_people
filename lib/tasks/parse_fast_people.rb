@@ -33,11 +33,19 @@ class ParseFastPeople
       @log.info "#{Time.zone.now} this link is have some problems #{link}"
       return
     end
-    {
-      "link" => link,
-      "age" => age, "emails" => emails, "wireless-phones" => phones.get_values(:wireless).compact,
-      "landline-phones" => phones.get_values(:landline).compact
-    }
+
+    begin
+      user = User.create({
+        link: link, emails: emails.to_s, age: age.to_s, landline: phones.get_values(:landline).compact.to_s,
+        wireless: phones.get_values(:wireless).compact.to_s
+      })
+      @log.info "#{Time.zone.now} create user #{user.link}"
+      @log.info "#{Time.zone.now} create user #{user.emails}"
+    rescue Exception => e
+      @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
+      @log.fatal e.inspect
+      @log.fatal e.backtrace
+    end
   end
 
   # i will get the first link which it match
@@ -47,24 +55,31 @@ class ParseFastPeople
   def parse_search_result
     links = []
     url = "#{BASE_URL}/name/#{@name}_#{@zip_code}"
-    @page = @mechanize.get(url)
-    puts "#{url}"
-    parse_detail_link = @page.search("//a[@class='btn btn-primary link-to-details']")
-    if parse_detail_link.present?
-      parse_detail_link.each do |item|
-        begin
-          next unless item.present?
-          raw_link = item.attributes["href"]&.value
-          @log.info "#{Time.zone.now} #{raw_link}"
-          links << "#{BASE_URL}#{raw_link}" if raw_link.present?
-        rescue Exception => e
-          @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
-          @log.fatal e.inspect
-          @log.fatal e.backtrace
+    begin
+      @page = @mechanize.get(url)
+      puts "#{url}"
+      parse_detail_link = @page.search("//a[@class='btn btn-primary link-to-details']")
+      if parse_detail_link.present?
+        parse_detail_link.each do |item|
+          begin
+            next unless item.present?
+            raw_link = item.attributes["href"]&.value
+            @log.info "#{Time.zone.now} #{raw_link}"
+            links << "#{BASE_URL}#{raw_link}" if raw_link.present?
+          rescue Exception => e
+            @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
+            @log.fatal e.inspect
+            @log.fatal e.backtrace
+          end
         end
       end
+      return links.first
+    rescue Exception => e
+      @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+      @log.fatal e.inspect
+      @log.fatal e.backtrace
     end
-    links.first
+    nil
   end
 
   private
@@ -167,6 +182,7 @@ class ParseFastPeople
       return false if !raw_address.present? && !raw_address.include?("current address") && !raw_address.include?("previous address")
       return true if raw_address.include?("current address") && !raw_address.include?("previous address")
       return true if !raw_address.include?("current address") && raw_address.include?("previous address")
+      return true
     rescue Exception => e
       @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
       @log.fatal e.inspect

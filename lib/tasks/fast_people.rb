@@ -47,7 +47,13 @@ class FastPeople
     import_proxy
     MasterDatum.all.each do |item|
       @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
-      switch_proxy(item)
+      begin
+        switch_proxy(item)
+      rescue Exception => e
+        @logger.info "#{Time.zone.now} #{item.name}"
+        @logger.fatal e.inspect
+        @logger.fatal e.backtrace
+      end
       @logger.info "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
     end
     write_to_csv
@@ -56,13 +62,13 @@ class FastPeople
   def write_to_csv
     File.open(OUTPUT_FILE, "w") do |f|
       f.puts("user: {")
-      @rows.each.with_index(1) do |row, index|
+      User.all.each.with_index(1) do |user, index|
         f.puts("\tuser#{index}: {")
-        f.puts("\t\tlink: #{row['link']},")
-        f.puts("\t\temails: #{row['emails']},")
-        f.puts("\t\twireless-phones: #{row['wireless-phones']},")
-        f.puts("\t\tlandline-phones: #{row['landline-phones']},")
-        f.puts("\t\tage: #{row['age']},")
+        f.puts("\t\tlink: #{user.link},")
+        f.puts("\t\temails: #{eval(user.emails)},")
+        f.puts("\t\twireless-phones: #{eval(user.wireless)},")
+        f.puts("\t\tlandline-phones: #{eval(user.landline)},")
+        f.puts("\t\tage: #{user.age},")
         f.puts("\t},")
       end
       f.puts("}")
@@ -87,7 +93,7 @@ class FastPeople
     proxy = Proxy.where(elite: true).sample
     if check_proxy?(proxy.name, proxy.port)
       obj_parse_people = ParseFastPeople.new(item.name, item.zip_code, @logger, proxy.name, proxy.port)
-      @rows << obj_parse_people.execute
+      obj_parse_people.execute
       return
     else
       proxy.update(elite: false)
