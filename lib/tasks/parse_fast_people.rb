@@ -11,7 +11,7 @@ class ParseFastPeople
   def initialize(name, zip_code, log)
     @mechanize = Mechanize.new { |agent|
       agent.user_agent_alias = 'Mac Safari'
-      agent.set_proxy '34.83.65.56', 3128
+      agent.set_proxy '137.53.216.209', 443
     }
     @name = convert_name(name)
     @zip_code = convert_zip_code(zip_code)
@@ -24,7 +24,11 @@ class ParseFastPeople
     @log.info "#{Time.zone.now} #{link}"
     return unless link.present?
     @page = @mechanize.get(link)
-    {age: get_age, emails: get_emails, phones: get_phones}
+    phones = get_phones
+    {
+      "age" => get_age, "emails" => get_emails, "wireless-phones" => phones.get_values(:wireless).compact,
+      "landline-phones" => phones.get_values(:landline).compact
+    }
   end
 
   # i will get the first link which it match
@@ -44,7 +48,7 @@ class ParseFastPeople
           @log.info "#{Time.zone.now} #{raw_link}"
           links << "#{BASE_URL}#{raw_link}" if raw_link.present?
         rescue e
-          @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+          @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
           @log.fatal e.inspect
           @log.fatal e.backtrace
         end
@@ -56,8 +60,14 @@ class ParseFastPeople
   private
   def get_age
     age = @page.search(".//h1/span")
-    age = age.text.strip
-    return age.split(" ").dig(1)
+    begin
+      age = age.text.strip
+      return age.split(" ").dig(1)
+    rescue e
+      @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+      @log.fatal e.inspect
+      @log.fatal e.backtrace
+    end
     nil
   end
 
@@ -73,7 +83,7 @@ class ParseFastPeople
           phones << {"wireless": phone} if phone_content&.downcase.include?("wireless")
         end
       rescue e
-        @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+        @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
         @log.fatal e.inspect
         @log.fatal e.backtrace
       end
@@ -88,7 +98,7 @@ class ParseFastPeople
           phones << {"landline": phone} if phone_content&.downcase.include?("landline")
           phones << {"wireless": phone} if phone_content&.downcase.include?("wireless")
         rescue e
-          @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+          @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
           @log.fatal e.inspect
           @log.fatal e.backtrace
         end
@@ -120,7 +130,7 @@ class ParseFastPeople
             next if item.attributes["data-cfemail"].nil?
             emails << cfDecodeEmail(item.attributes["data-cfemail"].value)
           rescue e
-            @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
+            @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
             @log.fatal e.inspect
             @log.fatal e.backtrace
           end

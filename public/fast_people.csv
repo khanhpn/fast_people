@@ -1,12 +1,11 @@
 {:user1=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}, :user2=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}, :user3=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}, :user4=>{:emails=>["a@gmail.com", "a@gmail.com"], :"wireless-phones"=>["1", "2", "3"], :"landline-phones"=>["1", "2", "3"], :age=>1}}
 
-{:age=>"100", :emails=>["john.ryals@aol.com", "john.ryals@ix.netcom.com", "fsuseminolesd@aol.com", "jryals@msn.com"], :phones=>[{:landline=>"(813) 689-2275"}, {:wireless=>"(813) 833-1556"}, {:wireless=>"(813) 625-1207"}, {:wireless=>"(813) 390-5736"}, {:wireless=>"(813) 833-1544"}, {:landline=>"(813) 654-0254"}, {:landline=>"(813) 655-9154"}, {:landline=>"(813) 689-8107"}, {:landline=>"(813) 685-7163"}]}
+{:age=>"100", :emails=>["john.ryals@aol.com", "john.ryals@ix.netcom.com", "fsuseminolesd@aol.com", "jryals@msn.com"], :"wireless-phones"=>["(813) 833-1556", "(813) 625-1207", "(813) 390-5736", "(813) 833-1544"], :"landline-phones"=>["(813) 689-2275", "(813) 654-0254", "(813) 655-9154", "(813) 689-8107", "(813) 685-7163"]}
 
-{:age=>"47", :emails=>["ladypmff@hotmail.com", "ladypmff72@yahoo.com", "ladypmff@bellsouth.net", "lawynmfk@hotmail.com"], :phones=>[{:wireless=>"(352) 875-8807"}, {:landline=>"(352) 624-3439"}, {:landline=>"(352) 264-3439"}, {:wireless=>"(352) 342-0347"}, {:wireless=>"(904) 687-8507"}, {:landline=>"(352) 245-2013"}, {:landline=>"(352) 245-7153"}, {:landline=>"(352) 288-3060"}, {:landline=>"(352) 288-0000"}, {:landline=>"(352) 624-0000"}, {:landline=>"(352) 687-4985"}, {:landline=>"(352) 687-8509"}, {:landline=>"(352) 873-7891"}]}
+{:age=>"47", :emails=>["ladypmff@hotmail.com", "ladypmff72@yahoo.com", "ladypmff@bellsouth.net", "lawynmfk@hotmail.com"], :"wireless-phones"=>["(352) 875-8807", "(352) 342-0347", "(904) 687-8507"], :"landline-phones"=>["(352) 624-3439", "(352) 264-3439", "(352) 245-2013", "(352) 245-7153", "(352) 288-3060", "(352) 288-0000", "(352) 624-0000", "(352) 687-4985", "(352) 687-8509", "(352) 873-7891"]}
 
-{:age=>"87", :emails=>["marie.desantis@ameritrade.com", "marie.desantis@att.net", "desantis.marie@hotmail.com"], :phones=>[{:landline=>"(732) 323-9825"}, {:wireless=>"(201) 851-6614"}, {:landline=>"(856) 858-9076"}, {:landline=>"(201) 440-2969"}]}
+{:age=>"87", :emails=>["marie.desantis@ameritrade.com", "marie.desantis@att.net", "desantis.marie@hotmail.com"], :"wireless-phones"=>["(201) 851-6614"], :"landline-phones"=>["(732) 323-9825", "(856) 858-9076", "(201) 440-2969"]}
 
-{:age=>"101", :emails=>["lawrenceflorio@excite.com"], :phones=>[{:landline=>"(925) 461-1860"}, {:wireless=>"(510) 703-6343"}, {:landline=>"(510) 794-7069"}]}
+{:age=>"101", :emails=>["lawrenceflorio@excite.com"], :"wireless-phones"=>["(510) 703-6343"], :"landline-phones"=>["(925) 461-1860", "(510) 794-7069"]}
 
-{:age=>"101", :emails=>["cthomas@usa.net"], :phones=>[{:landline=>"(570) 655-4727"}, {:wireless=>"(717) 655-4727"}, {:wireless=>"(570) 357-8251"}, {:landline=>"(570) 388-2284"}]}
-
+{:age=>"101", :emails=>["cthomas@usa.net"], :"wireless-phones"=>["(717) 655-4727", "(570) 357-8251"], :"landline-phones"=>["(570) 655-4727", "(570) 388-2284"]}
