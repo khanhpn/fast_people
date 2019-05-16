@@ -11,7 +11,7 @@ class ParseFastPeople
   def initialize(name, zip_code, log)
     @mechanize = Mechanize.new { |agent|
       agent.user_agent_alias = 'Mac Safari'
-      agent.set_proxy '137.53.216.209', 443
+      agent.set_proxy '216.172.129.15', 1212
     }
     @name = convert_name(name)
     @zip_code = convert_zip_code(zip_code)
@@ -26,6 +26,7 @@ class ParseFastPeople
     @page = @mechanize.get(link)
     phones = get_phones
     {
+      "link" => link,
       "age" => get_age, "emails" => get_emails, "wireless-phones" => phones.get_values(:wireless).compact,
       "landline-phones" => phones.get_values(:landline).compact
     }
@@ -39,6 +40,7 @@ class ParseFastPeople
     links = []
     url = "#{BASE_URL}/name/#{@name}_#{@zip_code}"
     @page = @mechanize.get(url)
+    puts "#{url}"
     parse_detail_link = @page.search("//a[@class='btn btn-primary link-to-details']")
     if parse_detail_link.present?
       parse_detail_link.each do |item|

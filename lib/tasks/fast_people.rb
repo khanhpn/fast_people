@@ -1,16 +1,18 @@
 require './lib/tasks/parse_fast_people.rb'
+require 'mechanize'
 
 class FastPeople
   BASE_MASTER_DATA = "#{Rails.root}/public/Book1.csv"
   BASE_MASTER_PROXY = "#{Rails.root}/public/proxy.txt"
   OUTPUT_FILE = "#{Rails.root}/public/fast_people.json"
+  BASE_URL = "https://www.fastpeoplesearch.com"
 
   def initialize
     @rows = []
     @logger ||= Logger.new(Rails.root.join('log', 'fast_people.log'))
   end
 
-  def read_zipcode_file
+  def import_zipcode_file
     puts "#{Time.zone.now} starting import master data to database"
     File.open(BASE_MASTER_DATA).each_with_index do |row, index|
       next if index == 0
@@ -24,8 +26,26 @@ class FastPeople
     puts "#{Time.zone.now} finished import master data to database"
   end
 
+  def import_proxy
+    puts "#{Time.zone.now} starting import proxy"
+    File.open(BASE_MASTER_PROXY).each do |row|
+      raw_row = row.split(":")
+      name = raw_row.dig(1)
+      port = raw_row.dig(2).to_i
+      proxy = Proxy.where(name: name, port: port)
+      expired_proxy = Proxy.where(elite: false)
+      expired_proxy.destroy_all if expired_proxy.present?
+      if !proxy.present?
+        puts "#{Time.zone.now} importing #{row}"
+        Proxy.create({name: name, port: port, elite: true}) if check_proxy?(name, port)
+      end
+    end
+    puts "#{Time.zone.now} finish import proxy"
+  end
+
   def execute
-    read_zipcode_file
+    import_zipcode_file
+    import_proxy
     MasterDatum.all.each do |item|
       obj_parse_people = ParseFastPeople.new(item.name, item.zip_code, @logger)
       @rows << obj_parse_people.execute
@@ -38,6 +58,7 @@ class FastPeople
       f.puts("user: {")
       @rows.each.with_index(1) do |row, index|
         f.puts("\tuser#{index}: {")
+        f.puts("\t\link: #{row['link']},")
         f.puts("\t\temails: #{row['emails']},")
         f.puts("\t\twireless-phones: #{row['wireless-phones']},")
         f.puts("\t\tlandline-phones: #{row['landline-phones']},")
@@ -46,5 +67,20 @@ class FastPeople
       end
       f.puts("}")
     end
+  end
+
+  private
+  def check_proxy?(name, port)
+    mechanize = Mechanize.new {|agent|
+      agent.user_agent_alias = 'Mac Safari'
+      agent.set_proxy name, port
+    }
+    begin
+      mechanize.get(BASE_URL)
+      return true
+    rescue e
+      return false
+    end
+    false
   end
 end
