@@ -9,7 +9,7 @@ class FastPeople
 
   def initialize
     @rows = []
-    @logger ||= Logger.new(Rails.root.join('log', 'fast_people.log'))
+    @logger ||= Logger.new(Rails.root.join('log', "#{Time.zone.now.strftime('%d_%m_%Y_%H_%M_%S')}_fast_people.log"))
   end
 
   def import_zipcode_file
