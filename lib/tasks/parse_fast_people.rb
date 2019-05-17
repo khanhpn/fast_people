@@ -29,11 +29,13 @@ class ParseFastPeople
     age = get_age
     emails = get_emails
     address = validate_address
+    @log.info "#{Time.zone.now} #{address} #{age} #{emails} #{phones}"
     if !address && !age.present? && !emails.present? && !phones.present? && !phones.get_values(:wireless).compact.present? && !phones.get_values(:landline).compact.present?
+      @log.fatal "#{Time.zone.now} ignore this link #{address} #{age} #{emails} #{phones} #{link}"
       @log.info "#{Time.zone.now} this link is have some problems #{link}"
       return
     end
-
+    binding.pry if link == "https://www.fastpeoplesearch.com/elizabeth-lico_id_G-2226846614906242312"
     begin
       user = User.create({
         link: link, emails: emails.to_s, age: age.to_s, landline: phones.get_values(:landline).compact.to_s,
