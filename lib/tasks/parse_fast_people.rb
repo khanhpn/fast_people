@@ -7,15 +7,17 @@ class ParseFastPeople
   PHONE_WIRELESS = "wireless-phones"
   PHONE_LANDLINE = "landline-phones"
 
-  attr_accessor :name, :zip_code, :log, :proxy_name, :proxy_port, :raw_zip_code
-  def initialize(name, zip_code, log, proxy_name, proxy_port)
+  attr_accessor :name, :zip_code, :model_family, :log, :proxy_name, :proxy_port, :raw_zip_code
+  def initialize(name, zip_code, model_family, log, proxy_name, proxy_port)
     @mechanize = Mechanize.new { |agent|
       agent.user_agent_alias = 'Mac Safari'
       agent.set_proxy proxy_name, proxy_port
     }
     @name = convert_name(name)
     @raw_zip_code = zip_code
+    @raw_name = name
     @zip_code = convert_zip_code(zip_code)
+    @model_family = model_family
     @page = nil
     @log = log
   end
@@ -36,6 +38,7 @@ class ParseFastPeople
       return
     end
     if !age.present? && !phones.present? && !emails.present?
+      ErrorUser.create({model_family: @model_family, name: @raw_name, zip_code: @raw_zip_code, link: link, error: "there aren't age, phone, emais"})
       @log.fatal "#{Time.zone.now} ignore this link #{address} #{age} #{emails} #{phones} #{link}"
       @log.info "#{Time.zone.now} this link is have some problems #{link}"
       return
@@ -43,11 +46,12 @@ class ParseFastPeople
     begin
       user = User.create({
         link: link, emails: emails.to_s, age: age.to_s, landline: phones.get_values(:landline).compact.to_s,
-        wireless: phones.get_values(:wireless).compact.to_s
+        wireless: phones.get_values(:wireless).compact.to_s, name: @raw_name, zip_code: @raw_zip_code, model_family: @model_family
       })
       @log.info "#{Time.zone.now} create user #{user.link}"
       @log.info "#{Time.zone.now} create user #{user.emails}"
     rescue Exception => e
+      ErrorUser.create({model_family: @model_family, name: @raw_name, zip_code: @raw_zip_code, link: link, error: "#{e.inspect} #{e.backtrace}"})
       @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
       @log.fatal e.inspect
       @log.fatal e.backtrace

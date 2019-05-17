@@ -1,0 +1,2 @@
+class ErrorUser < ApplicationRecord
+end
