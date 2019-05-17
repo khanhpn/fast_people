@@ -35,7 +35,11 @@ class ParseFastPeople
       @log.info "#{Time.zone.now} this link is have some problems #{link}"
       return
     end
-    binding.pry if link == "https://www.fastpeoplesearch.com/elizabeth-lico_id_G-2226846614906242312"
+    if !age.present? && !phones.present? && !emails.present?
+      @log.fatal "#{Time.zone.now} ignore this link #{address} #{age} #{emails} #{phones} #{link}"
+      @log.info "#{Time.zone.now} this link is have some problems #{link}"
+      return
+    end
     begin
       user = User.create({
         link: link, emails: emails.to_s, age: age.to_s, landline: phones.get_values(:landline).compact.to_s,
@@ -60,6 +64,7 @@ class ParseFastPeople
     begin
       @page = @mechanize.get(url)
       puts "#{url}"
+      return nil if check_match_zip_code? == false
       parse_detail_link = @page.search("//a[@class='btn btn-primary link-to-details']")
       if parse_detail_link.present?
         parse_detail_link.each do |item|
@@ -85,6 +90,15 @@ class ParseFastPeople
   end
 
   private
+  # check whether results search match same as zip code
+  def check_match_zip_code?
+    parse_header = @page.search(".//h1[@class='list-results-header']//strong")
+    return false if !parse_header.present?
+    content_header = parse_header.text&.downcase&.squish
+    return nil if !content_header.present?
+    content_header.include?(@raw_zip_code) ? true : false
+  end
+
   def get_age
     age = @page.search(".//h1/span")
     begin

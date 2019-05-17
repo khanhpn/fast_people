@@ -68,7 +68,7 @@ class FastPeople
         f.puts("\t\temails: #{eval(user.emails)},")
         f.puts("\t\twireless-phones: #{eval(user.wireless)},")
         f.puts("\t\tlandline-phones: #{eval(user.landline)},")
-        f.puts("\t\tage: #{user.age},")
+        f.puts("\t\tage: #{user.age}")
         f.puts("\t},")
       end
       f.puts("}")
