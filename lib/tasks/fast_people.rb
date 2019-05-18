@@ -25,9 +25,19 @@ class FastPeople
     File.open(BASE_MASTER_DATA).each_with_index do |row, index|
       next if index == 0
       item = row.squish.split(",")
-      master_data = MasterDatum.where(model_family: item.dig(0), name: item.dig(1), zip_code: item.dig(2))
+      master_data = MasterDatum.where(
+        id_user_info: item.dig(0).squish,
+        model_family: item.dig(1).squish,
+        name: item.dig(2).squish,
+        zip_code: item.dig(3).squish
+      )
       if !master_data.present?
-        MasterDatum.create({model_family: item.dig(0), name: item.dig(1), zip_code: item.dig(2)})
+        MasterDatum.create({
+          id_user_info: item.dig(0).squish,
+          model_family: item.dig(1).squish,
+          name: item.dig(2).squish,
+          zip_code: item.dig(3).squish
+        })
         puts "#{Time.zone.now} importing #{item.dig(0)}"
       end
     end
@@ -53,8 +63,8 @@ class FastPeople
   def execute
     import_zipcode_file
     # import_proxy
+    @notifier.ping "#{Time.zone.now} beginning start robot crawler.........."
     MasterDatum.all.each do |item|
-      @notifier.ping "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code} #{item.model_family}"
       @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
       begin
         switch_proxy(item)
@@ -62,13 +72,11 @@ class FastPeople
         @logger.info "#{Time.zone.now} #{item.name}"
         @logger.fatal e.inspect
         @logger.fatal e.backtrace
-        @notifier.ping "#{Time.zone.now} #{item.name}"
-        @notifier.ping e.inspect
-        @notifier.ping e.backtrace
+        @notifier.ping "#{Time.zone.now} #{item.name} #{e.inspect} #{e.backtrace}"
       end
-      @notifier.ping "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
       @logger.info "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
     end
+    @notifier.ping "#{Time.zone.now} finished robot crawler.........., waiting some seconds to export excel"
     write_to_excel
   end
 
@@ -103,7 +111,7 @@ class FastPeople
       emails = eval(user.emails).join(",\n")
       wireless = eval(user.wireless).join(",\n")
       landline = eval(user.landline).join(",\n")
-      @worksheet.write(index, 0, "User#{index}")
+      @worksheet.write(index, 0, user.id_user_info)
       @worksheet.write(index, 1, user.name)
       @worksheet.write(index, 2, user.age)
       @worksheet.write(index, 3, user.model_family)
@@ -126,7 +134,7 @@ class FastPeople
     @worksheet.write(0, 4, "Link")
     @worksheet.write(0, 5, "Error")
     ErrorUser.all.each.with_index(1) do |user, index|
-      @worksheet.write(index, 0, index)
+      @worksheet.write(index, 0, user.id_user_info)
       @worksheet.write(index, 1, user.model_family)
       @worksheet.write(index, 2, user.name)
       @worksheet.write(index, 3, user.zip_code)
@@ -134,6 +142,7 @@ class FastPeople
       @worksheet.write(index, 5, user.error)
     end
     @workbook.close
+    @notifier.ping "#{Time.zone.now} finished to export excel, please go to public folder to get file, thank you"
   end
 
   private
@@ -154,7 +163,11 @@ class FastPeople
   def switch_proxy(item)
     proxy = Proxy.where(elite: true).sample
     if check_proxy?(proxy.name, proxy.port)
-      obj_parse_people = ParseFastPeople.new(item.name, item.zip_code, item.model_family, @logger, proxy.name, proxy.port)
+      obj_parse_people = ParseFastPeople.new(
+        item.id_user_info,
+        item.name, item.zip_code, item.model_family,
+        @logger, proxy.name, proxy.port
+      )
       obj_parse_people.execute
       return
     else
