@@ -1,0 +1,19 @@
+<div class="jumbotron">
+  <h1 class="display-3">Crawl FastPeople</h1>
+  <p class="lead">
+    <%= form_with model: @raw_datum do |form| %>
+      <div class="form-group">
+        <label for="exampleFormControlFile1">Input source file</label>
+        <input type="file" class="form-control-file form-control-lg" id="exampleFormControlFile1">
+      </div>
+      <div class="form-group">
+        <label for="exampleFormControlFile1">Input proxy file</label>
+        <input type="file" class="form-control-file form-control-lg" id="exampleFormControlFile1">
+      </div>
+      <% form.submit "Submit", class: "btn btn-primary" %>
+    <% end %>
+  </p>
+  <hr class="my-2">
+  <p class="lead">Number of proxy: <%= @proxy.size %></p>
+  <p class="lead">Number of raw data: <%= @master_data %></p>
+</div>

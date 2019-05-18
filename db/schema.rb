@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_17_083401) do
+ActiveRecord::Schema.define(version: 2019_05_18_023712) do
 
   create_table "error_users", force: :cascade do |t|
     t.string "model_family"
@@ -40,6 +40,13 @@ ActiveRecord::Schema.define(version: 2019_05_17_083401) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["elite"], name: "index_proxies_on_elite"
+  end
+
+  create_table "raw_data", force: :cascade do |t|
+    t.text "raw_url"
+    t.text "proxy_url"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "users", force: :cascade do |t|

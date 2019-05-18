@@ -114,6 +114,25 @@ class FastPeople
       @worksheet.write(index, 8, user.zip_code)
       @worksheet.write(index, 9, user.link)
     end
+    write_error_links
+  end
+
+  def write_error_links
+    @worksheet = @workbook.add_worksheet
+    @worksheet.write(0, 0, "ID")
+    @worksheet.write(0, 1, "Model")
+    @worksheet.write(0, 2, "Name")
+    @worksheet.write(0, 3, "Zip Code")
+    @worksheet.write(0, 4, "Link")
+    @worksheet.write(0, 5, "Error")
+    ErrorUser.all.each.with_index(1) do |user, index|
+      @worksheet.write(index, 0, index)
+      @worksheet.write(index, 1, user.model_family)
+      @worksheet.write(index, 2, user.name)
+      @worksheet.write(index, 3, user.zip_code)
+      @worksheet.write(index, 4, user.link)
+      @worksheet.write(index, 5, user.error)
+    end
     @workbook.close
   end
 

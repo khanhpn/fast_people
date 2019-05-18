@@ -5,6 +5,7 @@ namespace :crawl_fast_people do
   task start: :environment do
     MasterDatum.destroy_all
     User.destroy_all
+    ErrorUser.destroy_all
     fast_people = FastPeople.new
     fast_people.execute
   end
