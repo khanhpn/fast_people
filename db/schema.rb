@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_18_023712) do
+ActiveRecord::Schema.define(version: 2019_05_18_142823) do
 
   create_table "error_users", force: :cascade do |t|
     t.string "model_family"
@@ -20,6 +20,7 @@ ActiveRecord::Schema.define(version: 2019_05_18_023712) do
     t.text "error"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "id_user_info"
   end
 
   create_table "master_data", force: :cascade do |t|
@@ -60,6 +61,7 @@ ActiveRecord::Schema.define(version: 2019_05_18_023712) do
     t.string "model_family"
     t.string "zip_code"
     t.string "name"
+    t.string "id_user_info"
   end
 
 end
