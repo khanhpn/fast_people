@@ -1,19 +1,29 @@
 <div class="jumbotron">
-  <h1 class="display-3">Crawl FastPeople</h1>
   <p class="lead">
-    <%= form_with model: @raw_datum do |form| %>
+    <h2>Crawl FastPeople</h2>
+    <%= form_with url: master_data_path, class: "form-horizontal" do |form| %>
       <div class="form-group">
-        <label for="exampleFormControlFile1">Input source file</label>
-        <input type="file" class="form-control-file form-control-lg" id="exampleFormControlFile1">
+        <label class="control-label col-sm-2" for="email">Master data input</label>
+        <div class="col-sm-10">
+          <%= form.file_field :raw_url, class: "form-control" %>
+        </div>
       </div>
       <div class="form-group">
-        <label for="exampleFormControlFile1">Input proxy file</label>
-        <input type="file" class="form-control-file form-control-lg" id="exampleFormControlFile1">
+        <label class="control-label col-sm-2" for="pwd">Proxy input</label>
+        <div class="col-sm-10">
+          <%= form.file_field :proxy_url, class: "form-control" %>
+        </div>
       </div>
-      <% form.submit "Submit", class: "btn btn-primary" %>
+      <div class="form-group">
+        <div class="col-sm-offset-2 col-sm-10">
+          <%= form.submit "Submit", class: "btn btn-primary" %>
+        </div>
+      </div>
     <% end %>
   </p>
   <hr class="my-2">
+  <p class="lead">Current proxy file: <%= @proxy.size %></p>
+  <p class="lead">Current master data file: <%= @proxy.size %></p>
   <p class="lead">Number of proxy: <%= @proxy.size %></p>
   <p class="lead">Number of raw data: <%= @master_data %></p>
 </div>

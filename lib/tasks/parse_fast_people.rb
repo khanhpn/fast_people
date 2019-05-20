@@ -247,7 +247,7 @@ class ParseFastPeople
   end
 
   def convert_zip_code(zip_code)
-    return "" if zip_code.present?
+    return "" unless zip_code.present?
     return zip_code.split("-").join("~") if zip_code.include?("-")
     zip_code
   end
