@@ -62,7 +62,7 @@ class FastPeople
 
   def execute
     import_zipcode_file
-    # import_proxy
+    import_proxy
     @notifier.ping "#{Time.zone.now} beginning start robot crawler.........."
     MasterDatum.all.each do |item|
       @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
