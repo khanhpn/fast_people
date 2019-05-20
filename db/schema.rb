@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_18_235558) do
+ActiveRecord::Schema.define(version: 2019_05_20_161635) do
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -84,6 +84,7 @@ ActiveRecord::Schema.define(version: 2019_05_18_235558) do
     t.string "zip_code"
     t.string "name"
     t.string "id_user_info"
+    t.boolean "is_checked"
   end
 
 end

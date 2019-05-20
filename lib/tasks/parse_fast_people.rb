@@ -27,6 +27,7 @@ class ParseFastPeople
     link = parse_search_result
     @log.info "#{Time.zone.now} #{link}"
     return unless link.present?
+    sleep(4)
     @page = @mechanize.get(link)
     phones = get_phones
     age = get_age
@@ -49,7 +50,8 @@ class ParseFastPeople
         link: link, emails: emails.to_s, age: age.to_s, id_user_info: @id_user_info,
         landline: phones.get_values(:landline).compact.to_s,
         wireless: phones.get_values(:wireless).compact.to_s,
-        name: @raw_name, zip_code: @raw_zip_code, model_family: @model_family
+        name: @raw_name, zip_code: @raw_zip_code, model_family: @model_family,
+        is_checked: true
       })
       @log.info "#{Time.zone.now} create user #{user.link}"
       @log.info "#{Time.zone.now} create user #{user.emails}"

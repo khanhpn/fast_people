@@ -5,9 +5,9 @@ require 'write_xlsx'
 class FastPeople
   BASE_MASTER_DATA = "#{Rails.root}/public/Book1.csv"
   BASE_MASTER_PROXY = "#{Rails.root}/public/proxy.txt"
-  OUTPUT_FILE = "#{Rails.root}/public/fast_people.xlsx"
   BASE_URL = "https://www.fastpeoplesearch.com"
   DEFAULT_WEBHOOK = "https://hooks.slack.com/services/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"
+  MAXROWS = 5000
 
   def initialize
     @rows = []
@@ -16,8 +16,6 @@ class FastPeople
       defaults channel: "#program-khanh",
       username: "robot-crawler-fastpeople"
     end
-    @workbook = WriteXLSX.new(OUTPUT_FILE)
-    @worksheet = @workbook.add_worksheet
   end
 
   def import_zipcode_file
@@ -50,10 +48,10 @@ class FastPeople
       raw_row = row.split(":")
       name = raw_row.dig(1)
       port = raw_row.dig(2).to_i
-      proxy = Proxy.where(name: name, port: port)
-      expired_proxy = Proxy.where(elite: false)
-      expired_proxy.destroy_all if expired_proxy.present?
-      next if proxy.present? || !check_proxy?(name, port)
+      # proxy = Proxy.where(name: name, port: port)
+      # expired_proxy = Proxy.where(elite: false)
+      # expired_proxy.destroy_all if expired_proxy.present?
+      # next if proxy.present? || !check_proxy?(name, port)
       puts "#{Time.zone.now} importing #{row}"
       Proxy.create({name: name, port: port, elite: true})
     end
@@ -61,13 +59,16 @@ class FastPeople
   end
 
   def execute
-    import_zipcode_file
+    # import_zipcode_file
     import_proxy
     @notifier.ping "#{Time.zone.now} beginning start robot crawler.........."
-    MasterDatum.all.each do |item|
+    proxy = Proxy.where(elite: true).sample
+    MasterDatum.all.each.with_index(0) do |item, index|
       @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
       begin
-        switch_proxy(item)
+        proxy = Proxy.where(elite: true).sample if index % 6 == 0
+        switch_proxy(item, proxy)
+        create_new_excel(index % MAXROWS) if index % MAXROWS
       rescue Exception => e
         @logger.info "#{Time.zone.now} #{item.name}"
         @logger.fatal e.inspect
@@ -77,71 +78,63 @@ class FastPeople
       @logger.info "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
     end
     @notifier.ping "#{Time.zone.now} finished robot crawler.........., waiting some seconds to export excel"
-    write_to_excel
+    create_new_excel(16)
   end
 
-  def write_to_csv
-    File.open(OUTPUT_FILE, "w") do |f|
-      f.puts("user: {")
-      User.all.each.with_index(1) do |user, index|
-        f.puts("\tuser#{index}: {")
-        f.puts("\t\tlink: #{user.link},")
-        f.puts("\t\temails: #{eval(user.emails)},")
-        f.puts("\t\twireless-phones: #{eval(user.wireless)},")
-        f.puts("\t\tlandline-phones: #{eval(user.landline)},")
-        f.puts("\t\tage: #{user.age}")
-        f.puts("\t},")
-      end
-      f.puts("}")
-    end
+  def create_new_excel(index)
+    output_file = "#{Rails.root}/public/fast_people_#{index}.xlsx"
+    workbook = WriteXLSX.new(output_file)
+    worksheet = workbook.add_worksheet
+    write_to_excel(worksheet, workbook)
   end
 
-  def write_to_excel
-    @worksheet.write(0, 0, "ID")
-    @worksheet.write(0, 1, "Name")
-    @worksheet.write(0, 2, "Age")
-    @worksheet.write(0, 3, "Model")
-    @worksheet.write(0, 4, "Emails")
-    @worksheet.write(0, 5, "Wireless")
-    @worksheet.write(0, 6, "Landline")
-    @worksheet.write(0, 7, "Zip Code")
-    @worksheet.write(0, 8, "Zip Code Found")
-    @worksheet.write(0, 9, "Link")
-    User.all.each.with_index(1) do |user, index|
+  def write_to_excel(worksheet, workbook)
+    worksheet.write(0, 0, "ID")
+    worksheet.write(0, 1, "Name")
+    worksheet.write(0, 2, "Age")
+    worksheet.write(0, 3, "Model")
+    worksheet.write(0, 4, "Emails")
+    worksheet.write(0, 5, "Wireless")
+    worksheet.write(0, 6, "Landline")
+    worksheet.write(0, 7, "Zip Code")
+    worksheet.write(0, 8, "Zip Code Found")
+    worksheet.write(0, 9, "Link")
+    User.where(is_checked: true).each.with_index(1) do |user, index|
       emails = eval(user.emails).join(",\n")
       wireless = eval(user.wireless).join(",\n")
       landline = eval(user.landline).join(",\n")
-      @worksheet.write(index, 0, user.id_user_info)
-      @worksheet.write(index, 1, user.name)
-      @worksheet.write(index, 2, user.age)
-      @worksheet.write(index, 3, user.model_family)
-      @worksheet.write(index, 4, emails)
-      @worksheet.write(index, 5, wireless)
-      @worksheet.write(index, 6, landline)
-      @worksheet.write(index, 7, user.zip_code)
-      @worksheet.write(index, 8, user.zip_code)
-      @worksheet.write(index, 9, user.link)
+      worksheet.write(index, 0, user.id_user_info)
+      worksheet.write(index, 1, user.name)
+      worksheet.write(index, 2, user.age)
+      worksheet.write(index, 3, user.model_family)
+      worksheet.write(index, 4, emails)
+      worksheet.write(index, 5, wireless)
+      worksheet.write(index, 6, landline)
+      worksheet.write(index, 7, user.zip_code)
+      worksheet.write(index, 8, user.zip_code)
+      worksheet.write(index, 9, user.link)
     end
-    write_error_links
+    write_error_links(worksheet, workbook)
   end
 
-  def write_error_links
-    @worksheet = @workbook.add_worksheet
-    @worksheet.write(0, 0, "ID")
-    @worksheet.write(0, 1, "Model")
-    @worksheet.write(0, 2, "Name")
-    @worksheet.write(0, 3, "Zip Code")
-    @worksheet.write(0, 4, "Link")
-    @worksheet.write(0, 5, "Error")
+  def write_error_links(worksheet, workbook)
+    worksheet = workbook.addworksheet
+    worksheet.write(0, 0, "ID")
+    worksheet.write(0, 1, "Model")
+    worksheet.write(0, 2, "Name")
+    worksheet.write(0, 3, "Zip Code")
+    worksheet.write(0, 4, "Link")
+    worksheet.write(0, 5, "Error")
     ErrorUser.all.each.with_index(1) do |user, index|
-      @worksheet.write(index, 0, user.id_user_info)
-      @worksheet.write(index, 1, user.model_family)
-      @worksheet.write(index, 2, user.name)
-      @worksheet.write(index, 3, user.zip_code)
-      @worksheet.write(index, 4, user.link)
-      @worksheet.write(index, 5, user.error)
+      worksheet.write(index, 0, user.id_user_info)
+      worksheet.write(index, 1, user.model_family)
+      worksheet.write(index, 2, user.name)
+      worksheet.write(index, 3, user.zip_code)
+      worksheet.write(index, 4, user.link)
+      worksheet.write(index, 5, user.error)
     end
-    @workbook.close
+    workbook.close
+    User.update_all(is_checked: false)
     @notifier.ping "#{Time.zone.now} finished to export excel, please go to public folder to get file, thank you"
   end
 
@@ -154,14 +147,14 @@ class FastPeople
     begin
       mechanize.get(BASE_URL)
     rescue Exception => e
-      @notifier.ping "#{Time.zone.now} proxy expired or can't use to crawl #{name} #{port}"
+      puts "Proxy didn't use anymore #{name}:#{port}"
+      # @notifier.ping "#{Time.zone.now} proxy expired or can't use to crawl #{name} #{port}"
       return false
     end
     true
   end
 
-  def switch_proxy(item)
-    proxy = Proxy.where(elite: true).sample
+  def switch_proxy(item, proxy)
     if check_proxy?(proxy.name, proxy.port)
       obj_parse_people = ParseFastPeople.new(
         item.id_user_info,
@@ -171,8 +164,10 @@ class FastPeople
       obj_parse_people.execute
       return
     else
-      proxy.update(elite: false)
-      switch_proxy(item)
+      # proxy.update(elite: false)
+      puts "Proxy didn't switch anymore #{name}:#{port}"
+      proxy = Proxy.where(elite: true).sample
+      switch_proxy(item, proxy)
     end
   end
 end
