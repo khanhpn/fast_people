@@ -1,24 +1,21 @@
 # README
 
-This README would normally document whatever steps are necessary to get the
-application up and running.
+This is website that allow user who can upload raw data and proxy, and get all results from the fastpeople, include id, emails, phones,...
 
-Things you may want to cover:
+This website was build by using these technologies as:
 
-* Ruby version
+* Ruby version: 2.6.3
 
-* System dependencies
+* Rails version: 5.2.3
 
-* Configuration
+* Mechanize
 
-* Database creation
+* Services (Delayed job)
 
-* Database initialization
+* sqllite
 
-* How to run the test suite
+# How to run
+Pull source code from git, and run 
+`rails server`
 
-* Services (job queues, cache servers, search engines, etc.)
-
-* Deployment instructions
-
-* ...
+# Gui
