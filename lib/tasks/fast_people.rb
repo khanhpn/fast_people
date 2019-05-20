@@ -72,7 +72,7 @@ class FastPeople
         @logger.info "#{Time.zone.now} #{item.name}"
         @logger.fatal e.inspect
         @logger.fatal e.backtrace
-        @notifier.ping "#{Time.zone.now} #{item.name} #{e.inspect} #{e.backtrace}"
+        # @notifier.ping "#{Time.zone.now} #{item.name} #{e.inspect} #{e.backtrace}"
       end
       @logger.info "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
     end
