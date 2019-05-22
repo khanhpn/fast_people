@@ -4,8 +4,8 @@ namespace :crawl_fast_people do
   desc 'starting crawl data from fastpeople'
   task start: :environment do
     # MasterDatum.destroy_all
-    User.destroy_all
-    ErrorUser.destroy_all
+    User.delete_all
+    ErrorUser.delete_all
     fast_people = FastPeople.new
     fast_people.execute
   end

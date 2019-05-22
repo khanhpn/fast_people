@@ -27,7 +27,6 @@ class ParseFastPeople
     link = parse_search_result
     @log.info "#{Time.zone.now} #{link}"
     return unless link.present?
-    sleep(4)
     @page = @mechanize.get(link)
     phones = get_phones
     age = get_age

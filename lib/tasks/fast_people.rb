@@ -48,10 +48,10 @@ class FastPeople
       raw_row = row.split(":")
       name = raw_row.dig(1)
       port = raw_row.dig(2).to_i
-      # proxy = Proxy.where(name: name, port: port)
-      # expired_proxy = Proxy.where(elite: false)
-      # expired_proxy.destroy_all if expired_proxy.present?
-      # next if proxy.present? || !check_proxy?(name, port)
+      proxy = Proxy.where(name: name, port: port)
+      expired_proxy = Proxy.where(elite: false)
+      expired_proxy.destroy_all if expired_proxy.present?
+      next if proxy.present? || !check_proxy?(name, port)
       puts "#{Time.zone.now} importing #{row}"
       Proxy.create({name: name, port: port, elite: true})
     end
@@ -118,7 +118,7 @@ class FastPeople
   end
 
   def write_error_links(worksheet, workbook)
-    worksheet = workbook.addworksheet
+    worksheet = workbook.add_worksheet
     worksheet.write(0, 0, "ID")
     worksheet.write(0, 1, "Model")
     worksheet.write(0, 2, "Name")
@@ -164,7 +164,7 @@ class FastPeople
       obj_parse_people.execute
       return
     else
-      # proxy.update(elite: false)
+      proxy.update(elite: false)
       puts "Proxy didn't switch anymore #{name}:#{port}"
       proxy = Proxy.where(elite: true).sample
       switch_proxy(item, proxy)
