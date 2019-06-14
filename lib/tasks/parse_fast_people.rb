@@ -7,11 +7,11 @@ class ParseFastPeople
   PHONE_WIRELESS = "wireless-phones"
   PHONE_LANDLINE = "landline-phones"
 
-  attr_accessor :name, :zip_code, :model_family, :log, :proxy_name, :proxy_port, :raw_zip_code, :id_user_info
-  def initialize(id_user_info, name, zip_code, model_family, log, proxy_name, proxy_port)
+  attr_accessor :name, :zip_code, :model_family, :log, :raw_zip_code, :id_user_info
+  def initialize(id_user_info, name, zip_code, model_family, log)
     @mechanize = Mechanize.new { |agent|
-      agent.user_agent_alias = 'Mac Safari'
-      agent.set_proxy proxy_name, proxy_port
+      agent.user_agent_alias = 'Windows Mozilla'
+      agent.set_proxy "servercountry-US.zproxy.lum-superproxy.io", 22225, "lum-customer-hl_5e1fda0a-zone-static-country-us", "nryl7x9z5x4j"
     }
     @id_user_info = id_user_info
     @name = convert_name(name)
@@ -23,11 +23,18 @@ class ParseFastPeople
     @log = log
   end
 
+  def get_mechanize
+    @mechanize = Mechanize.new { |agent|
+      agent.user_agent_alias = 'Windows Mozilla'
+      agent.set_proxy "servercountry-US.zproxy.lum-superproxy.io", 22225, "lum-customer-hl_5e1fda0a-zone-static-country-us", "nryl7x9z5x4j"
+    }
+  end
+
   def execute
     link = parse_search_result
     @log.info "#{Time.zone.now} #{link}"
     return unless link.present?
-    @page = @mechanize.get(link)
+    @page = get_mechanize.get(link)
     phones = get_phones
     age = get_age
     emails = get_emails
@@ -72,32 +79,26 @@ class ParseFastPeople
   def parse_search_result
     links = []
     url = "#{BASE_URL}/name/#{@name}_#{@zip_code}"
-    begin
-      @page = @mechanize.get(url)
-      puts "#{url}"
-      return nil if check_match_zip_code? == false
-      parse_detail_link = @page.search("//a[@class='btn btn-primary link-to-details']")
-      if parse_detail_link.present?
-        parse_detail_link.each do |item|
-          begin
-            next unless item.present?
-            raw_link = item.attributes["href"]&.value
-            @log.info "#{Time.zone.now} #{raw_link}"
-            links << "#{BASE_URL}#{raw_link}" if raw_link.present?
-          rescue Exception => e
-            @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
-            @log.fatal e.inspect
-            @log.fatal e.backtrace
-          end
+    @page = @mechanize.get(url)
+    puts "#{url}"
+    return nil if check_match_zip_code? == false
+    parse_detail_link = @page.search("//a[@class='btn btn-primary link-to-details']")
+    puts "#{url} with parse_detail_link is present"
+    if parse_detail_link.present?
+      parse_detail_link.each do |item|
+        begin
+          next unless item.present?
+          raw_link = item.attributes["href"]&.value
+          @log.info "#{Time.zone.now} #{raw_link}"
+          links << "#{BASE_URL}#{raw_link}" if raw_link.present?
+        rescue Exception => e
+          @log.info "#{Time.zone.now} #{@name} #{@zip_code} #{item}"
+          @log.fatal e.inspect
+          @log.fatal e.backtrace
         end
       end
-      return links.first
-    rescue Exception => e
-      @log.info "#{Time.zone.now} #{@name} #{@zip_code}"
-      @log.fatal e.inspect
-      @log.fatal e.backtrace
     end
-    nil
+    links.first
   end
 
   private

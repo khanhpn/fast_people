@@ -42,47 +42,26 @@ class FastPeople
     puts "#{Time.zone.now} finished import master data to database"
   end
 
-  def import_proxy
-    puts "#{Time.zone.now} starting import proxy"
-    File.open(BASE_MASTER_PROXY).each do |row|
-      raw_row = row.split(":")
-      name = raw_row.dig(1)
-      port = raw_row.dig(2).to_i
-      proxy = Proxy.where(name: name, port: port)
-      expired_proxy = Proxy.where(elite: false)
-      expired_proxy.destroy_all if expired_proxy.present?
-      next if proxy.present? || !check_proxy?(name, port)
-      puts "#{Time.zone.now} importing #{row}"
-      Proxy.create({name: name, port: port, elite: true})
-    end
-    puts "#{Time.zone.now} finish import proxy"
-  end
-
   def execute
     # import_zipcode_file
-    import_proxy
     @notifier.ping "#{Time.zone.now} beginning start robot crawler.........."
-    proxy = Proxy.where(elite: true).sample
     MasterDatum.all.each.with_index(0) do |item, index|
       @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
       begin
-        proxy = Proxy.where(elite: true).sample if index % 6 == 0
-        switch_proxy(item, proxy)
-        create_new_excel(index % MAXROWS) if index % MAXROWS
+        switch_proxy(item)
       rescue Exception => e
         @logger.info "#{Time.zone.now} #{item.name}"
         @logger.fatal e.inspect
         @logger.fatal e.backtrace
-        # @notifier.ping "#{Time.zone.now} #{item.name} #{e.inspect} #{e.backtrace}"
       end
       @logger.info "#{Time.zone.now} finish craw..... with item #{item.name} #{item.zip_code}"
     end
     @notifier.ping "#{Time.zone.now} finished robot crawler.........., waiting some seconds to export excel"
-    create_new_excel(16)
+    create_new_excel
   end
 
-  def create_new_excel(index)
-    output_file = "#{Rails.root}/public/fast_people_#{index}.xlsx"
+  def create_new_excel
+    output_file = "#{Rails.root}/public/fast_people.xlsx"
     workbook = WriteXLSX.new(output_file)
     worksheet = workbook.add_worksheet
     write_to_excel(worksheet, workbook)
@@ -139,35 +118,22 @@ class FastPeople
   end
 
   private
-  def check_proxy?(name, port)
-    mechanize = Mechanize.new {|agent|
-      agent.user_agent_alias = 'Mac Safari'
-      agent.set_proxy name, port
-    }
-    begin
-      mechanize.get(BASE_URL)
-    rescue Exception => e
-      puts "Proxy didn't use anymore #{name}:#{port}"
-      # @notifier.ping "#{Time.zone.now} proxy expired or can't use to crawl #{name} #{port}"
-      return false
-    end
-    true
-  end
 
-  def switch_proxy(item, proxy)
-    if check_proxy?(proxy.name, proxy.port)
+  def switch_proxy(item)
+    begin
+      @logger.info "#{Time.zone.now} start crawl again #{item.name}"
       obj_parse_people = ParseFastPeople.new(
         item.id_user_info,
         item.name, item.zip_code, item.model_family,
-        @logger, proxy.name, proxy.port
+        @logger
       )
       obj_parse_people.execute
-      return
-    else
-      proxy.update(elite: false)
-      puts "Proxy didn't switch anymore #{name}:#{port}"
-      proxy = Proxy.where(elite: true).sample
-      switch_proxy(item, proxy)
+    rescue Exception => e
+      switch_proxy(item)
+      @logger.info "#{Time.zone.now} #{item.name}"
+      @logger.info "#{Time.zone.now} crawl #{item.name} again"
+      @logger.fatal e.inspect
+      @logger.fatal e.backtrace
     end
   end
 end
