@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2019_05_20_161635) do
+ActiveRecord::Schema.define(version: 2019_06_14_233721) do
 
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
@@ -72,19 +72,7 @@ ActiveRecord::Schema.define(version: 2019_05_20_161635) do
     t.datetime "updated_at", null: false
   end
 
-  create_table "users", force: :cascade do |t|
-    t.string "age"
-    t.text "emails"
-    t.text "landline"
-    t.text "wireless"
-    t.text "link"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
-    t.string "model_family"
-    t.string "zip_code"
-    t.string "name"
-    t.string "id_user_info"
-    t.boolean "is_checked"
-  end
+# Could not dump table "users" because of following StandardError
+#   Unknown type 'bool' for column 'export_excel'
 
 end

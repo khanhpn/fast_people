@@ -9,6 +9,8 @@ class FastPeople
   DEFAULT_WEBHOOK = "https://hooks.slack.com/services/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"
   MAXROWS = 5000
 
+  @@check_crawler_runtime = 0
+
   def initialize
     @rows = []
     @logger ||= Logger.new(Rails.root.join('log', "#{Time.zone.now.strftime('%d_%m_%Y_%H_%M_%S')}_fast_people.log"))
@@ -48,6 +50,8 @@ class FastPeople
     MasterDatum.all.each.with_index(0) do |item, index|
       @logger.info "#{Time.zone.now} starting craw..... with item #{item.name} #{item.zip_code}"
       begin
+        create_new_excel if User.export_to_excel?
+        @@check_crawler_runtime = 0
         switch_proxy(item)
       rescue Exception => e
         @logger.info "#{Time.zone.now} #{item.name}"
@@ -61,13 +65,15 @@ class FastPeople
   end
 
   def create_new_excel
-    output_file = "#{Rails.root}/public/fast_people.xlsx"
+    user = User.user_excel_limit
+    output_file = "#{Rails.root}/public/fast_people_#{user&.last&.id}.xlsx"
     workbook = WriteXLSX.new(output_file)
     worksheet = workbook.add_worksheet
     write_to_excel(worksheet, workbook)
   end
 
   def write_to_excel(worksheet, workbook)
+    users = User.user_excel_limit
     worksheet.write(0, 0, "ID")
     worksheet.write(0, 1, "Name")
     worksheet.write(0, 2, "Age")
@@ -78,7 +84,7 @@ class FastPeople
     worksheet.write(0, 7, "Zip Code")
     worksheet.write(0, 8, "Zip Code Found")
     worksheet.write(0, 9, "Link")
-    User.where(is_checked: true).each.with_index(1) do |user, index|
+    users.each.with_index(1) do |user, index|
       emails = eval(user.emails).join(",\n")
       wireless = eval(user.wireless).join(",\n")
       landline = eval(user.landline).join(",\n")
@@ -94,6 +100,7 @@ class FastPeople
       worksheet.write(index, 9, user.link)
     end
     write_error_links(worksheet, workbook)
+    users.update_all(export_excel: true)
   end
 
   def write_error_links(worksheet, workbook)
@@ -113,15 +120,19 @@ class FastPeople
       worksheet.write(index, 5, user.error)
     end
     workbook.close
-    User.update_all(is_checked: false)
     @notifier.ping "#{Time.zone.now} finished to export excel, please go to public folder to get file, thank you"
   end
 
   private
 
   def switch_proxy(item)
+    if @@check_crawler_runtime >= 10
+      @logger.info "#{Time.zone.now} the crawler will skip #{item.name} with number #{@@check_crawler_runtime}"
+      return
+    end
+
     begin
-      @logger.info "#{Time.zone.now} start crawl again #{item.name}"
+      @logger.info "#{Time.zone.now} start crawl again #{item.name} with number #{@@check_crawler_runtime}"
       obj_parse_people = ParseFastPeople.new(
         item.id_user_info,
         item.name, item.zip_code, item.model_family,
@@ -129,9 +140,10 @@ class FastPeople
       )
       obj_parse_people.execute
     rescue Exception => e
+      @@check_crawler_runtime += 1
       switch_proxy(item)
       @logger.info "#{Time.zone.now} #{item.name}"
-      @logger.info "#{Time.zone.now} crawl #{item.name} again"
+      @logger.info "#{Time.zone.now} crawl #{item.name} again with number #{@@check_crawler_runtime}"
       @logger.fatal e.inspect
       @logger.fatal e.backtrace
     end
